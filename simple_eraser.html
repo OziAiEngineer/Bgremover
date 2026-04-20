@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IOPaint - Simple Eraser</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-success {
+            background: #48bb78;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #38a169;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(72, 187, 120, 0.4);
+        }
+
+        .btn-danger {
+            background: #f56565;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #e53e3e;
+        }
+
+        .btn-secondary {
+            background: #718096;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #4a5568;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .brush-size {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .brush-size label {
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        .brush-size input[type="range"] {
+            width: 150px;
+        }
+
+        .brush-size span {
+            min-width: 40px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .canvas-container {
+            position: relative;
+            display: inline-block;
+            margin: 20px auto;
+            border: 3px solid #e2e8f0;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            background: #f7fafc;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        .workspace {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        #imageCanvas {
+            cursor: crosshair;
+        }
+
+        #maskCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            cursor: crosshair;
+            pointer-events: all;
+        }
+
+        .status {
+            text-align: center;
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        .status.info {
+            background: #bee3f8;
+            color: #2c5282;
+        }
+
+        .status.success {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .status.error {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+
+        .status.processing {
+            background: #feebc8;
+            color: #7c2d12;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top-color: #667eea;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .instructions {
+            background: #edf2f7;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .instructions h3 {
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+
+        .instructions ol {
+            margin-left: 20px;
+            color: #4a5568;
+            line-height: 1.8;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🎨 IOPaint Eraser</h1>
+
+        <div class="instructions">
+            <h3>How to use:</h3>
+            <ol>
+                <li>Click "Upload Image" to select an image</li>
+                <li>Paint over the areas you want to erase</li>
+                <li>Click "Erase" to remove the painted areas</li>
+                <li>Download the result!</li>
+            </ol>
+        </div>
+
+        <div class="controls">
+            <label for="imageInput" class="btn btn-primary">Upload Image</label>
+            <input type="file" id="imageInput" accept="image/*">
+
+            <button id="eraseBtn" class="btn btn-success" disabled>✨ Erase</button>
+            <button id="clearBtn" class="btn btn-danger" disabled>Clear Mask</button>
+            <button id="downloadBtn" class="btn btn-secondary" disabled>Download Result</button>
+
+            <div class="brush-size">
+                <label for="brushSize">Brush Size:</label>
+                <input type="range" id="brushSize" min="5" max="100" value="30">
+                <span id="brushSizeValue">30</span>
+            </div>
+        </div>
+
+        <div class="workspace">
+            <div class="canvas-container">
+                <canvas id="imageCanvas"></canvas>
+                <canvas id="maskCanvas"></canvas>
+            </div>
+        </div>
+
+        <div id="status" class="status info">
+            Upload an image to get started
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://172.16.2.231:8080';
+
+        const imageInput = document.getElementById('imageInput');
+        const imageCanvas = document.getElementById('imageCanvas');
+        const maskCanvas = document.getElementById('maskCanvas');
+        const imageCtx = imageCanvas.getContext('2d');
+        const maskCtx = maskCanvas.getContext('2d');
+
+        const eraseBtn = document.getElementById('eraseBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const brushSizeInput = document.getElementById('brushSize');
+        const brushSizeValue = document.getElementById('brushSizeValue');
+        const statusDiv = document.getElementById('status');
+
+        let isDrawing = false;
+        let originalImage = null;
+        let resultImage = null;
+        let brushSize = 30;
+
+        brushSizeInput.addEventListener('input', (e) => {
+            brushSize = parseInt(e.target.value);
+            brushSizeValue.textContent = brushSize;
+        });
+
+        imageInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    // Set canvas size
+                    const maxWidth = 800;
+                    const maxHeight = 600;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > maxWidth) {
+                        height = (height * maxWidth) / width;
+                        width = maxWidth;
+                    }
+                    if (height > maxHeight) {
+                        width = (width * maxHeight) / height;
+                        height = maxHeight;
+                    }
+
+                    imageCanvas.width = width;
+                    imageCanvas.height = height;
+                    maskCanvas.width = width;
+                    maskCanvas.height = height;
+
+                    // Draw image
+                    imageCtx.drawImage(img, 0, 0, width, height);
+                    originalImage = img;
+
+                    // Clear mask (transparent)
+                    maskCtx.clearRect(0, 0, width, height);
+
+                    eraseBtn.disabled = false;
+                    clearBtn.disabled = false;
+                    updateStatus('Image loaded! Paint over areas to erase', 'info');
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // Drawing on mask canvas
+        maskCanvas.addEventListener('mousedown', startDrawing);
+        maskCanvas.addEventListener('mousemove', draw);
+        maskCanvas.addEventListener('mouseup', stopDrawing);
+        maskCanvas.addEventListener('mouseout', stopDrawing);
+
+        // Touch support
+        maskCanvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousedown', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            maskCanvas.dispatchEvent(mouseEvent);
+        });
+
+        maskCanvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousemove', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            maskCanvas.dispatchEvent(mouseEvent);
+        });
+
+        maskCanvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            const mouseEvent = new MouseEvent('mouseup', {});
+            maskCanvas.dispatchEvent(mouseEvent);
+        });
+
+        function startDrawing(e) {
+            isDrawing = true;
+            draw(e);
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+            maskCtx.beginPath();
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+
+            const rect = maskCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            maskCtx.lineWidth = brushSize;
+            maskCtx.lineCap = 'round';
+            maskCtx.strokeStyle = 'rgba(255, 0, 0, 0.8)';  // Red highlight
+
+            maskCtx.lineTo(x, y);
+            maskCtx.stroke();
+            maskCtx.beginPath();
+            maskCtx.moveTo(x, y);
+        }
+
+        clearBtn.addEventListener('click', () => {
+            maskCtx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
+            updateStatus('Mask cleared', 'info');
+        });
+
+        eraseBtn.addEventListener('click', async () => {
+            if (!originalImage) return;
+
+            updateStatus('Processing... Please wait', 'processing', true);
+            eraseBtn.disabled = true;
+
+            try {
+                // Create a temporary canvas for the mask with white strokes on black background
+                const tempMaskCanvas = document.createElement('canvas');
+                tempMaskCanvas.width = maskCanvas.width;
+                tempMaskCanvas.height = maskCanvas.height;
+                const tempMaskCtx = tempMaskCanvas.getContext('2d');
+
+                // Fill with black
+                tempMaskCtx.fillStyle = 'black';
+                tempMaskCtx.fillRect(0, 0, tempMaskCanvas.width, tempMaskCanvas.height);
+
+                // Draw the red mask as white
+                tempMaskCtx.globalCompositeOperation = 'source-over';
+                const imageData = maskCtx.getImageData(0, 0, maskCanvas.width, maskCanvas.height);
+                const data = imageData.data;
+
+                // Convert red pixels to white
+                for (let i = 0; i < data.length; i += 4) {
+                    if (data[i] > 100) { // If red channel is high
+                        data[i] = 255;     // R
+                        data[i + 1] = 255; // G
+                        data[i + 2] = 255; // B
+                        data[i + 3] = 255; // A
+                    } else {
+                        data[i] = 0;       // R
+                        data[i + 1] = 0;   // G
+                        data[i + 2] = 0;   // B
+                        data[i + 3] = 255; // A
+                    }
+                }
+                tempMaskCtx.putImageData(imageData, 0, 0);
+
+                // Get image and mask as base64
+                const originalImageData = imageCanvas.toDataURL('image/png');
+                const maskData = tempMaskCanvas.toDataURL('image/png');
+
+                // Call API
+                const response = await fetch(`${API_URL}/api/v1/inpaint`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        image: originalImageData.split(',')[1],
+                        mask: maskData.split(',')[1],
+                        ldmSteps: 25,
+                        ldmSampler: 'plms',
+                        hdStrategy: 'Original',
+                        hdStrategyCropMargin: 128,
+                        hdStrategyCropTrigerSize: 800,
+                        hdStrategyResizeLimit: 2048,
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.status}`);
+                }
+
+                console.log(response)
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+
+                const img = new Image();
+                img.onload = () => {
+                    imageCtx.drawImage(img, 0, 0, imageCanvas.width, imageCanvas.height);
+                    resultImage = url;
+                    downloadBtn.disabled = false;
+                    updateStatus('✅ Erasing complete! You can download the result', 'success');
+                    eraseBtn.disabled = false;
+                };
+                img.src = url;
+
+            } catch (error) {
+                console.error('Error:', error);
+                updateStatus('❌ Error: ' + error.message + '. Make sure the server is running!', 'error');
+                eraseBtn.disabled = false;
+            }
+        });
+
+        downloadBtn.addEventListener('click', () => {
+            if (!resultImage) return;
+
+            const link = document.createElement('a');
+            link.download = 'erased_image.png';
+            link.href = imageCanvas.toDataURL('image/png');
+            link.click();
+
+            updateStatus('Image downloaded!', 'success');
+        });
+
+        function updateStatus(message, type = 'info', showSpinner = false) {
+            statusDiv.className = `status ${type}`;
+            statusDiv.innerHTML = showSpinner
+                ? `<span class="spinner"></span>${message}`
+                : message;
+        }
+    </script>
+</body>
+
+</html>

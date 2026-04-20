@@ -1,0 +1,74 @@
+# Custom Existing Entries
+.DS_Store
+**/__pycache__
+examples/
+.idea/
+.vscode/
+build/
+!iopaint/app/build
+dist/
+IOPaint.egg-info/
+venv/
+tmp/
+iopaint/web_app/
+
+# Environment Variables and Virtual Environments
+.env
+env/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Byte-compiled / optimized / DLL files
+*.py[cod]
+*$py.class
+*.so
+
+# Python distribution / packaging
+.Python
+develop-eggs/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Coverage and Testing
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.pycover
+.hypothesis/
+.pytest_cache/
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# Other IDEs and editors
+*.swp
+*.swo
+*~
+
+# AI Models and Weights Cache
+*.pth
+*.pt
+*.onnx
+*.safetensors
+models/
+checkpoints/
+.huggingface/
