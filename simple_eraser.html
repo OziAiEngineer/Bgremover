@@ -299,10 +299,23 @@
             const file = e.target.files[0];
             if (!file) return;
 
+            console.log('[Upload] File selected:', file.name, file.type, file.size);
+            updateStatus('Loading image...', 'info');
+
             const reader = new FileReader();
+            reader.onerror = (err) => {
+                console.error('[Upload] FileReader error:', err);
+                updateStatus('❌ Failed to read file: ' + err, 'error');
+            };
             reader.onload = (event) => {
+                console.log('[Upload] FileReader loaded, creating Image...');
                 const img = new Image();
+                img.onerror = (err) => {
+                    console.error('[Upload] Image load error:', err);
+                    updateStatus('❌ Failed to decode image', 'error');
+                };
                 img.onload = () => {
+                    console.log('[Upload] Image decoded:', img.width, 'x', img.height);
                     // Set canvas size
                     const maxWidth = 800;
                     const maxHeight = 600;
@@ -318,21 +331,22 @@
                         height = maxHeight;
                     }
 
-                    imageCanvas.width = width;
-                    imageCanvas.height = height;
-                    maskCanvas.width = width;
-                    maskCanvas.height = height;
+                    imageCanvas.width = Math.round(width);
+                    imageCanvas.height = Math.round(height);
+                    maskCanvas.width = Math.round(width);
+                    maskCanvas.height = Math.round(height);
 
                     // Draw image
-                    imageCtx.drawImage(img, 0, 0, width, height);
+                    imageCtx.drawImage(img, 0, 0, Math.round(width), Math.round(height));
                     originalImage = img;
 
                     // Clear mask (transparent)
-                    maskCtx.clearRect(0, 0, width, height);
+                    maskCtx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
 
                     eraseBtn.disabled = false;
                     clearBtn.disabled = false;
-                    updateStatus('Image loaded! Paint over areas to erase', 'info');
+                    updateStatus('✅ Image loaded! Paint over areas to erase, then click Erase', 'success');
+                    console.log('[Upload] Done — canvas size:', imageCanvas.width, 'x', imageCanvas.height);
                 };
                 img.src = event.target.result;
             };
@@ -468,19 +482,20 @@
                     throw new Error(`API error: ${response.status}`);
                 }
 
-                console.log(response)
-                const blob = await response.blob();
-                const url = URL.createObjectURL(blob);
+                console.log(response);
+                const responseData = await response.json();
+                const resultUrl = responseData.result_url;
 
                 const img = new Image();
+                img.crossOrigin = 'anonymous';
                 img.onload = () => {
                     imageCtx.drawImage(img, 0, 0, imageCanvas.width, imageCanvas.height);
-                    resultImage = url;
+                    resultImage = resultUrl;
                     downloadBtn.disabled = false;
                     updateStatus('✅ Erasing complete! You can download the result', 'success');
                     eraseBtn.disabled = false;
                 };
-                img.src = url;
+                img.src = resultUrl;
 
             } catch (error) {
                 console.error('Error:', error);
@@ -489,15 +504,20 @@
             }
         });
 
-        downloadBtn.addEventListener('click', () => {
+        downloadBtn.addEventListener('click', async () => {
             if (!resultImage) return;
 
-            const link = document.createElement('a');
-            link.download = 'erased_image.png';
-            link.href = imageCanvas.toDataURL('image/png');
-            link.click();
-
-            updateStatus('Image downloaded!', 'success');
+            try {
+                const resp = await fetch(resultImage);
+                const blob = await resp.blob();
+                const link = document.createElement('a');
+                link.download = 'erased_image.webp';
+                link.href = URL.createObjectURL(blob);
+                link.click();
+                updateStatus('Image downloaded!', 'success');
+            } catch (err) {
+                updateStatus('❌ Download failed: ' + err.message, 'error');
+            }
         });
 
         function updateStatus(message, type = 'info', showSpinner = false) {

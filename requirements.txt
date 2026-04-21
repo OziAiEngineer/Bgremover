@@ -9,6 +9,7 @@ safetensors
 controlnet-aux==0.0.3
 fastapi==0.108.0
 uvicorn
+aiofiles
 python-multipart
 python-socketio==5.7.2
 typer
